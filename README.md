@@ -43,5 +43,10 @@ s2w ALL=(ALL) NOPASSWD:/sbin/iw
     - access the page.
     
         
+        
+        
+        
+![alt text](https://raw.githubusercontent.com/comarius/wifiphp-config/master/wifiphpone.png "wifipho-config")
+
 
 
