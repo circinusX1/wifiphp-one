@@ -50,3 +50,7 @@ s2w ALL=(ALL) NOPASSWD:/sbin/iw
 
 
 
+If you contribute please 'KISS'.
+
+
+
