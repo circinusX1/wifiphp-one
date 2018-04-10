@@ -17,14 +17,28 @@ One php page to configure wifi client
 ```
     - kill and disable any othe rnetwork managers.
         - like: connman and friends
-    - sudo visudo
+    - visudo
     
 ```javascript
 
+sudo visudo
+
+s2w ALL=(ALL) NOPASSWD:/sbin/ifconfig
+s2w ALL=(ALL) NOPASSWD:/usr/sbin/service
+s2w ALL=(ALL) NOPASSWD:/usr/bin/wpa_passphrase
+s2w ALL=(ALL) NOPASSWD:/sbin/ifdown
+s2w ALL=(ALL) NOPASSWD:/sbin/ifup
+s2w ALL=(ALL) NOPASSWD:/sbin/dhclient
+s2w ALL=(ALL) NOPASSWD:/sbin/wpa_cli
+s2w ALL=(ALL) NOPASSWD:/sbin/ip
+s2w ALL=(ALL) NOPASSWD:/sbin/iwlist
+s2w ALL=(ALL) NOPASSWD:/bin/systemctl
+s2w ALL=(ALL) NOPASSWD:/sbin/iw
 
 
 ```
-        
+    - save
+    
         
 
 
