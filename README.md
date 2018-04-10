@@ -38,6 +38,9 @@ s2w ALL=(ALL) NOPASSWD:/sbin/iw
 
 ```
     - save
+    - copy the php on your web server root 
+    - change new Ssh("localhost","user","user");  with new Ssh("localhost","your user name","your password");
+    - access the page.
     
         
 
