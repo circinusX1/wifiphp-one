@@ -15,7 +15,7 @@ One php page to configure wifi client
   ls -l  /etc/wpa_supplicant/wpa_supplicant.conf
   -rw-r--r-- 1 www-data marius 116 Apr 10 20:01 /etc/wpa_supplicant/wpa_supplicant.conf
 ```
-    - kill and disable any othe rnetwork managers.
+    - kill and disable any othe network managers.
         - like: connman and friends
     - visudo
     
