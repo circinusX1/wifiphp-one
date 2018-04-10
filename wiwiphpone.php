@@ -56,7 +56,7 @@
     {
         //print_r($_GET);
         //
-        $ssh = new Ssh("localhost","s2w","s2w");
+        $ssh = new Ssh("localhost","user","user");
         $qry = "/usr/bin/wpa_passphrase {$_GET['name']} {$_GET['p']}";
 //        echo $qry;
         $wpc = ($ssh->shell($qry));       
