@@ -8,12 +8,18 @@ One php page to configure wifi client
     - wpa-supplicant https://blog.nelhage.com/2008/08/using-wpa_supplicant-on-debianubuntu/
     - php with https://serverpilot.io/community/articles/how-to-install-the-php-ssh2-extension.html
     
-### system
+#### system
 
 ```javascript
   sudo chown www-data:$USER /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo touch /etc/wpa_supplicant/env
+  sudo chown www-data:$USER /etc/wpa_supplicant/env
+  sudo chomod 775 /etc/wpa_supplicant/wpa_supplicant.conf
+  sudo chmod 755 /etc/wpa_supplicant/env
+  
   ls -l  /etc/wpa_supplicant/wpa_supplicant.conf
-  -rw-r--r-- 1 www-data marius 116 Apr 10 20:01 /etc/wpa_supplicant/wpa_supplicant.conf
+  -rw-rw-r-- 1 www-data marius 116 Apr 10 20:01 /etc/wpa_supplicant/wpa_supplicant.conf
+  -rw-rw-r-- 1 www-data marius 116 Apr 10 20:01 /etc/wpa_supplicant/env
 ```
     - kill and disable any other network managers / service.
         - like: 'connman' and friends...
@@ -21,7 +27,7 @@ One php page to configure wifi client
     
 ```javascript
 
-sudo visudo
+#### sudo visudo
 
 s2w ALL=(ALL) NOPASSWD:/sbin/ifconfig
 s2w ALL=(ALL) NOPASSWD:/usr/sbin/service
@@ -34,9 +40,23 @@ s2w ALL=(ALL) NOPASSWD:/sbin/ip
 s2w ALL=(ALL) NOPASSWD:/sbin/iwlist
 s2w ALL=(ALL) NOPASSWD:/bin/systemctl
 s2w ALL=(ALL) NOPASSWD:/sbin/iw
-
-
 ```
+
+#### wpa_supplicabt /lib/systemd/system/wpa_supplicant.service  changes. Add Environment Line and -i${WLAN}
+    
+
+````javascript
+[Service]
+Type=dbus
+EnvironmentFile=/etc/wpa_supplicant/env
+BusName=fi.epitest.hostap.WPASupplicant
+ExecStart=/sbin/wpa_supplicant -u -s -O -i${WLAN} /run/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf
+
+
+````
+
+
+
     - save
     - copy the php on your web server root 
     - change new Ssh("localhost","user","user");  with new Ssh("localhost","your user name","your password");
