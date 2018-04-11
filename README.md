@@ -25,10 +25,10 @@ One php page to configure wifi client
         - like: 'connman' and friends...
     - add to sudoers following programs.
     
+
+#### system
+
 ```javascript
-
-#### sudo visudo
-
 s2w ALL=(ALL) NOPASSWD:/sbin/ifconfig
 s2w ALL=(ALL) NOPASSWD:/usr/sbin/service
 s2w ALL=(ALL) NOPASSWD:/usr/bin/wpa_passphrase
@@ -43,7 +43,6 @@ s2w ALL=(ALL) NOPASSWD:/sbin/iw
 ```
 
 #### wpa_supplicabt /lib/systemd/system/wpa_supplicant.service  changes. Add Environment Line and -i${WLAN}
-    
 
 ````javascript
 [Service]
@@ -51,7 +50,6 @@ Type=dbus
 EnvironmentFile=/etc/wpa_supplicant/env
 BusName=fi.epitest.hostap.WPASupplicant
 ExecStart=/sbin/wpa_supplicant -u -s -O -i${WLAN} /run/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf
-
 
 ````
 
