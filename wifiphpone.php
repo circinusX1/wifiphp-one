@@ -1,4 +1,10 @@
+
+
 <?php
+    $USER="user";
+    $PASW="password"; //localhost
+    
+
     class Ssh
     {
         private $connection;
@@ -52,20 +58,38 @@
         }
     };
 
-    if(isset($_GET['emac']) )
+    if(isset($_GET['hapd']))
+    {
+        $ssh = new Ssh("localhost",$USER,$PASW);
+        $hapd = $ssh->shell("ps ax | grep hostapd | grep -v grep");
+        if($hapd!=null)
+        {
+            $ssh->exec("sudo systemctl stop hostapd");
+        }
+        else
+        {
+            $ssh->exec("sudo systemctl restart wpa_supplicant");
+        }
+
+    }
+    else if(isset($_GET['emac']))
     {
         //print_r($_GET);
         //
-        $ssh = new Ssh("localhost","user","user");
+        $ssh = new Ssh("localhost",$USER,$PASW);
         $qry = "/usr/bin/wpa_passphrase {$_GET['name']} {$_GET['p']}";
-//        echo $qry;
-        $wpc = ($ssh->shell($qry));       
+        $iface = $_GET['w'];
+        $wpc = ($ssh->shell($qry));    
+        $ssh->exec("sudo systemctl stop wpa_supplicant");
+   
         if($wpc != null){
             file_put_contents("/etc/wpa_supplicant/wpa_supplicant.conf",$wpc); 
-            $ssh->exec("sudo systemctl stop wpa_supplicant");
-            $ssh->exec("sudo /sbin/wpa_supplicant -B -iwlan0 -c/etc/wpa_supplicant/wpa_supplicant.conf -Dwext");
+            $ssh->exec("sudo systemctl start wpa_supplicant");
+            file_put_contents("/etc/wpa_supplicant/env", "WLAN={$iface}"); 
+
             $ssh->exec("sudo /sbin/ifconfig {$_GET['w']} down");
             $ssh->exec("sudo /sbin/ifconfig {$_GET['w']} up");
+            $ssh->exec("sudo kill -9 $(pidof dhclient)");            
             $ssh->exec("sudo /sbin/dhclient {$_GET['w']}");
             $wlan =  $ssh->shell("/sbin/iwconfig | grep ESSID | awk {'print $1}'");
             if($wlan == null)
@@ -74,13 +98,11 @@
                 die();
             }
             // find if there is an ip there
-            $ip =  $ssh->shell("/sbin/ifconfig {$wlan} | grep 'inet' | grep 'netmask' | awk '{print $2}'");
-            file_put_contents("/tmp/wifiphp.txt",$_GET['name']); 
+            $ip =  $ssh->shell("/sbin/ifconfig {$wlan} 2>&1 | grep 'inet' | grep 'netmask' | awk '{print $2}'");
             echo "Connected to {$ip}";
            
         }
         else{
-            file_put_contents("/tmp/wifiphp.txt",""); 
             echo "Error {$qry}";
         }
         die();
@@ -88,10 +110,6 @@
 
 ?>
 
-<script
-    src="http://code.jquery.com/jquery-3.3.1.min.js"
-    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-crossorigin="anonymous"></script>
 
 <style type = "text/css">
 .wifipb{}
@@ -102,6 +120,7 @@ crossorigin="anonymous"></script>
     width:100px;    
     display:inline-block;
 }
+
 .wifion
 {
     border: 1px solid #000;
@@ -109,18 +128,69 @@ crossorigin="anonymous"></script>
     display:inline-block;
     background:#AFA;
 }
-</style>
 
+
+</style>
+<script src="http://code.jquery.com/jquery-3.3.1.min.js"</script>
+<script>
+$(document).ready(function() {
+
+   $('.hdefault').toggle();
+
+    $(".wifikon").click(function() {
+        var id = "h_" + $(this).attr("id");
+        $('#' + id).toggle();
+    });
+
+    $('#killap').click(function() {
+
+        $(this).html("Processing...");
+        $.ajax({async: true,
+                type: 'GET',
+                url: '/network.php?hapd=1',
+                success: function(result)
+        {
+            location.reload();
+        }});
+    });
+
+
+    $(".wifipb").click(function() {
+
+        $(this).html("Connecting...");
+        var pbid = $(this).attr('id');
+        var emac = $(this).attr('id').substring(2); 
+        var pid = "p_" + emac;
+        var wid = "w_" + emac;
+        var name = $(this).attr('name');
+        var pass = $('#'+pid).val();   
+    
+        $.ajax({async: true,
+                type: 'GET',
+                url: '/network.php?emac='+emac+'&name='+name+'&p='+pass+'&w='+wid,
+                success: function(result)
+        {
+            $('#'+pbid).html("Refreshing...");
+            $('#' +'h_'+ emac).toggle(200);
+            location.reload();
+        }});
+    });
+});
+</script>
 <?php
 
-    $ssh = new Ssh("localhost","s2w","s2w");
-
-    $running = $ssh->shell("ps ax | grep supplic | grep -v grep");
-    if($running == null)
+    $ssh = new Ssh("localhost",$USER,$PASW);
+    sleep(1);
+    $iscon=null;
+    if (is_file("/etc/wpa_supplicant/wpa_supplicant.conf"))
     {
-        $ssh->exec("sudo systemctl start wpa_supplicant");
-        sleep(3);
+        $ssid = str_replace("\t","",$ssh->shell("grep ssid /etc/wpa_supplicant/wpa_supplicant.conf")); 
+        $ssid = str_replace("\"","",$ssid); 
+        $ssid = str_replace("=","",$ssid); 
+        $ssid = str_replace("\n","",$ssid); 
+        $iscon = str_replace("ssid","",$ssid); 
     }
+    $ssh->exec("sudo systemctl restart wpa_supplicant");
     $running = $ssh->shell("ps ax | grep supplic | grep -v grep");
     if($running == null)
     {
@@ -128,36 +198,37 @@ crossorigin="anonymous"></script>
         die();
     }    
     // find out wlan
-    $wlan =  $ssh->shell("/sbin/iwconfig | grep ESSID | awk {'print $1}'");
+    $wlan =  $ssh->shell("/sbin/iwconfig 2>&1 | grep ESSID | awk {'print $1}'");
     if($wlan == null)
     {
         echo "There is no wifi interface detected. F5 to refresh !";
-        die();
+        scan($iscon, $ssh, $wlan ,"*");
     }
+    $wlan=str_replace("\n","",$wlan);
     // find if there is an ip there
-    $ssh->flush();    
-    
-    $cmd =     "/sbin/ifconfig {$wlan} | grep 'inet' | grep 'netmask' | awk '{print $2}'";
-    echo ("<pre>");
-    $ipaddr =  $ssh->shell($cmd);
-    $ips = explode(' ',$ipaddr);
-    if(count($ips))
+    $cmd =     "/sbin/ifconfig {$wlan} 2>&1 | grep 'inet' | grep 'netmask' | awk '{print $2}'";
+    $ipaddr =  str_replace(" ","",$ssh->shell($cmd));
+    if($ipaddr==null)
     {
-        for($i=0;$i<count($ips);$i++)
-        {
-            if($ips[$i] == 'inet')
-            {
-                $ipaddr = $ips[$i+1];
-                break;
-            }
-        }
+        echo "There is no IP !";
+        
     }
+    scan($iscon, $ssh, $wlan, $ipaddr);
+
+function scan($iscon, &$ssh, $wlan,$ipaddr)
+{    
+
+    $running = $ssh->shell("ps ax | grep supplic | grep -v grep");
+    if($running == null)
+    {
+        echo "<font color='red'>Cannot start wpa_suplicant. F5 to refresh !</font>";
+        die();
+    }    
 
     $keepgoing=false;
     $enabled=false;
     $qual=0;
     $name=null;
-    $iscon=file_get_contents("/tmp/wifiphp.txt"); 
     $enc="off";
     $enc="<font color='red'>Open</font>";
     $keepgoing=false;
@@ -215,7 +286,7 @@ crossorigin="anonymous"></script>
             echo "<div class='meter-value' style='background-color:#393;width:{$perc}%;'>".
                   "{$perc}%</div>";
             echo "</td><td>{$enc}</td>";
-
+            
             if($name==$iscon)
             {
                 echo "<td><div class='wifion'>Connected: {$ipaddr}</div></td></tr>";
@@ -238,47 +309,40 @@ crossorigin="anonymous"></script>
             $keepgoing=true;
        }
     }
-    echo "</table>";
+    echo "<tr><td colspan='4'>";
+    $hapd = $ssh->shell("ps ax | grep hostapd | grep -v grep");
+    if($hapd!=null)
+    {
+        echo "HostAP can disrupt wifi if the wifi card does not run in dual mode: <button id='killap'>Kill Wifi Hot Spot</button>";
+        $hapd=explode(" ",$hapd);
+        foreach($hapd as $h)
+        {
+            if(strstr($h,".conf"))
+            {
+                $cfgfile = $h;
+                break;
+            }
+        }
+        if($cfgfile!=null)
+        {
+            $iface = explode("=",str_replace("\n","",$ssh->shell("grep interface {$cfgfile}")));
+            $iph = $ssh->shell("/sbin/ifconfig {$iface[1]} | grep netmask | awk '{print $2}'");
 
-    $ssh->exec("sudo systemctl restart wpa_supplicant");
-    
+            echo "{$iface[1]} {$iph}";
+        }
+        
+    }
+    else
+    {
+       
+        echo "HostAP is not running: <button id='killap'>Start Wifi Hot Spot</button>";
+    }    
+    echo "</td></tr></table>";
+    die();
+}
 ?>
 
-<script>
-$(document).ready(function() {
 
-   $('.hdefault').toggle();
-
-
-    $(".wifikon").click(function() {
-        var id = "h_" + $(this).attr("id");
-        $('#' + id).toggle();
-    });
-
-
-    $(".wifipb").click(function() {
-
-        $(this).html("Connecting...");
-        var pbid = $(this).attr('id');
-        var emac = $(this).attr('id').substring(2); 
-        var pid = "p_" + emac;
-        var wid = "w_" + emac;
-        var name = $(this).attr('name');
-        var pass = $('#'+pid).val();       
-        $.ajax({    async: true,
-                    type: 'GET',
-                    url: '/network.php?emac='+emac+'&name='+name+'&p='+pass+'&w='+wid,
-                    success: function(result)
-        {
-            $('#'+pbid).html(result);
-            $('#' +'h_'+ emac).toggle(200);
-            location.reload();
-        }});
-    });
-
-
-});
-</script>
 
 <!-- 
 
@@ -290,13 +354,18 @@ Wants=network.target
 
 [Service]
 Type=dbus
+EnvironmentFile=/etc/wpa_supplicant/env
 BusName=fi.epitest.hostap.WPASupplicant
 #ExecStart=/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant -c/etc/wpa_supplicant/wpa_supplicant.conf
-#ExecStart=/sbin/wpa_supplicant -B -iwlan0 -c/etc/wpa_supplicant/wpa_supplicant.conf -Dwext
+ExecStart=/sbin/wpa_supplicant -B -i${WLAN} -c/etc/wpa_supplicant/wpa_supplicant.conf -Dwext
 
 [Install]
 WantedBy=multi-user.target
 Alias=dbus-fi.epitest.hostap.WPASupplicant.service
 
+
 -->
+
+
+
 
