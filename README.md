@@ -29,17 +29,17 @@ One php page to configure wifi client
 #### system
 
 ```javascript
-s2w ALL=(ALL) NOPASSWD:/sbin/ifconfig
-s2w ALL=(ALL) NOPASSWD:/usr/sbin/service
-s2w ALL=(ALL) NOPASSWD:/usr/bin/wpa_passphrase
-s2w ALL=(ALL) NOPASSWD:/sbin/ifdown
-s2w ALL=(ALL) NOPASSWD:/sbin/ifup
-s2w ALL=(ALL) NOPASSWD:/sbin/dhclient
-s2w ALL=(ALL) NOPASSWD:/sbin/wpa_cli
-s2w ALL=(ALL) NOPASSWD:/sbin/ip
-s2w ALL=(ALL) NOPASSWD:/sbin/iwlist
-s2w ALL=(ALL) NOPASSWD:/bin/systemctl
-s2w ALL=(ALL) NOPASSWD:/sbin/iw
+you ALL=(ALL) NOPASSWD:/sbin/ifconfig
+you ALL=(ALL) NOPASSWD:/usr/sbin/service
+you ALL=(ALL) NOPASSWD:/usr/bin/wpa_passphrase
+you ALL=(ALL) NOPASSWD:/sbin/ifdown
+you ALL=(ALL) NOPASSWD:/sbin/ifup
+you ALL=(ALL) NOPASSWD:/sbin/dhclient
+you ALL=(ALL) NOPASSWD:/sbin/wpa_cli
+you ALL=(ALL) NOPASSWD:/sbin/ip
+you ALL=(ALL) NOPASSWD:/sbin/iwlist
+you ALL=(ALL) NOPASSWD:/bin/systemctl
+you ALL=(ALL) NOPASSWD:/sbin/iw
 ```
 
 #### wpa_supplicabt /lib/systemd/system/wpa_supplicant.service  changes. Add Environment Line and -i${WLAN}
