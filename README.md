@@ -7,6 +7,7 @@ One php page to configure wifi client
     - or lighttpd with php cgi enabled
     - wpa-supplicant https://blog.nelhage.com/2008/08/using-wpa_supplicant-on-debianubuntu/
     - php with https://serverpilot.io/community/articles/how-to-install-the-php-ssh2-extension.html
+        -sudo apt-get install libssh2-php 
     
 #### system
 
