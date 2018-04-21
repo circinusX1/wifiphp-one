@@ -45,6 +45,9 @@ you ALL=(ALL) NOPASSWD:/sbin/iw
 
 #### wpa_supplicabt /lib/systemd/system/wpa_supplicant.service  changes. Add Environment Line and -i${WLAN}
 
+edit the pgpg and change password and username in ssh2 connect
+
+
 ````javascript
 [Service]
 Type=dbus
