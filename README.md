@@ -74,5 +74,13 @@ ExecStart=/sbin/wpa_supplicant -u -s -O -i${WLAN} /run/wpa_supplicant -c/etc/wpa
 
 If you contribute please 'KISS'.
 
+    - tested om:
+        - BBB
+        - C. H. I. P.
+        - Orange Pi Wifi
+        - Nano pi Wifi
+        - Nano pi neo with wifi dongle
+        
+
 
 
