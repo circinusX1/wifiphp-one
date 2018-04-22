@@ -12,14 +12,16 @@ One php page to configure wifi client
 #### system
 
 ```javascript
+  sudo apt-get install wireless-tools
   sudo chown www-data:$USER /etc/wpa_supplicant/wpa_supplicant.conf
   sudo touch /etc/wpa_supplicant/env
   sudo chown www-data:$USER /etc/wpa_supplicant/env
   sudo chomod 775 /etc/wpa_supplicant/wpa_supplicant.conf
   sudo touch /etc/wpa_supplicant/env
-  # put wlan=<your interface name> (once) n /etc/wpa_supplicant/env
+  # put WLAN=<your interface name> (once) n /etc/wpa_supplicant/env
   sudo chown $USWER:$USER /etc/wpa_supplicant/env
   sudo chmod 755 /etc/wpa_supplicant/env
+  
   
   ls -l  /etc/wpa_supplicant/wpa_supplicant.conf
   -rw-rw-r-- 1 www-data marius 116 Apr 10 20:01 /etc/wpa_supplicant/wpa_supplicant.conf
