@@ -1,8 +1,6 @@
-
-
 <?php
-    $USER="user";
-    $PASW="password"; //localhost
+    $USER="chip";
+    $PASW="chip"; //localhost
     
 
     class Ssh
@@ -18,6 +16,7 @@
         function exec($cmd)
         {
             $stream = ssh2_exec($this->connection, $cmd);
+	    stream_set_blocking($stream,true);
             $stream_out = ssh2_fetch_stream($stream, SSH2_STREAM_STDIO);
             $stream_err =  ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
             while($line = fgets($stream_err)) { flush(); echo "<font color='red'>".$line."</font>\n"; }
@@ -30,6 +29,7 @@
         function flush()
         {
             $stream = ssh2_exec($this->connection, "\r\n");
+	    stream_set_blocking($stream,true);
             $stream_out = ssh2_fetch_stream($stream, SSH2_STREAM_STDIO);
             $stream_err =  ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
             while($line = fgets($stream_err)) { flush();}
@@ -41,6 +41,7 @@
         function shell($cmd, $errors=false)
         {
             $stream = ssh2_exec($this->connection, $cmd);
+	    stream_set_blocking($stream,true);
             $stream_out = ssh2_fetch_stream($stream, SSH2_STREAM_STDIO);
             $stream_err = ssh2_fetch_stream($stream, SSH2_STREAM_STDERR);
             stream_set_blocking($stream_out, true);
@@ -79,28 +80,31 @@
         $ssh = new Ssh("localhost",$USER,$PASW);
         $qry = "/usr/bin/wpa_passphrase {$_GET['name']} {$_GET['p']}";
         $iface = $_GET['w'];
-        $wpc = ($ssh->shell($qry));    
+        $wpc = ($ssh->shell($qry));
         $ssh->exec("sudo systemctl stop wpa_supplicant");
-   
         if($wpc != null){
-            file_put_contents("/etc/wpa_supplicant/wpa_supplicant.conf",$wpc); 
+	    
+            $old = file_get_contents("/etc/wpa_supplicant/wpa_supplicant.conf");
+            file_put_contents("/etc/wpa_supplicant/wpa_supplicant.conf.$(date)",$old);
+
+            file_put_contents("/etc/wpa_supplicant/wpa_supplicant.conf",$wpc);
             $ssh->exec("sudo systemctl start wpa_supplicant");
-            file_put_contents("/etc/wpa_supplicant/env", "WLAN={$iface}"); 
+            file_put_contents("/etc/wpa_supplicant/env", "WLAN={$iface}");
 
             $ssh->exec("sudo /sbin/ifconfig {$_GET['w']} down");
             $ssh->exec("sudo /sbin/ifconfig {$_GET['w']} up");
-            $ssh->exec("sudo kill -9 $(pidof dhclient)");            
+            $ssh->exec("sudo kill -9 $(pidof dhclient)");
             $ssh->exec("sudo /sbin/dhclient {$_GET['w']}");
             $wlan =  $ssh->shell("/sbin/iwconfig | grep ESSID | awk {'print $1}'");
             if($wlan == null)
             {
-                echo "There is no wifi interface detected";
+                echo "There is no wifi interface detected!";
                 die();
             }
             // find if there is an ip there
             $ip =  $ssh->shell("/sbin/ifconfig {$wlan} 2>&1 | grep 'inet' | grep 'netmask' | awk '{print $2}'");
             echo "Connected to {$ip}";
-           
+	   
         }
         else{
             echo "Error {$qry}";
@@ -128,10 +132,10 @@
     display:inline-block;
     background:#AFA;
 }
-
+.hdefault{}
 
 </style>
-<script src="http://code.jquery.com/jquery-3.3.1.min.js"</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 <script>
 $(document).ready(function() {
 
@@ -147,7 +151,7 @@ $(document).ready(function() {
         $(this).html("Processing...");
         $.ajax({async: true,
                 type: 'GET',
-                url: '/network.php?hapd=1',
+                url: '/index.php?hapd=1',
                 success: function(result)
         {
             location.reload();
@@ -167,7 +171,7 @@ $(document).ready(function() {
     
         $.ajax({async: true,
                 type: 'GET',
-                url: '/network.php?emac='+emac+'&name='+name+'&p='+pass+'&w='+wid,
+                url: '/index.php?emac='+emac+'&name='+name+'&p='+pass+'&w='+wid,
                 success: function(result)
         {
             $('#'+pbid).html("Refreshing...");
@@ -244,17 +248,18 @@ function scan($iscon, &$ssh, $wlan,$ipaddr)
         if(strstr($l,"Cell"))
         {
             $enabled=false;
-            $qual=0;
+            $qual=-1;
             $name=null;
             $enc="off";
             $enc="<font color='red'>Open Network</font>";
-                $keepgoing=false;
-                $pl=explode(" ", $l);
-                $f=$pl[14];
+            $keepgoing=false;
+            $pl=explode(" ", $l);
+            $f=$pl[14];
         }
-        if($keepgoing)
+        if($keepgoing){
             continue;
-        if(strstr($l,"Quality"))
+        }
+        if(strstr($l,"ality"))
         {
             $qual = $l;
         }
@@ -264,21 +269,41 @@ function scan($iscon, &$ssh, $wlan,$ipaddr)
             $name=str_replace("\"","",substr($l,$ghi+1));
             //$name.=" ".$mac . " - ".$iscon ;
         }
-        else if(strstr($l,"WPA"))
+        else if(strstr($l,"WPA") || strstr($l,"IEEE"))
         {
             $enabled=true;
         }
         else if(strstr($l,"Encryption key"))
-            $enc="WPA Secured";
-
-        if($enabled && $name)
         {
-        
+            $enc="WPA Secured";
+        }
+
+/*
+   Cell 52 - Address: 2C:30:33:E1:45:D6
+                    ESSID:"ethanPlace"
+                    Protocol:IEEE 802.11bgn
+                    Mode:Master
+                    Frequency:2.422 GHz (Channel 3)
+                    Encryption key:on
+                    Bit Rates:144 Mb/s
+                    Extra:rsn_ie=30140100000fac040100000fac040100000fac020c00
+                    IE: IEEE 802.11i/WPA2 Version 1
+                        Group Cipher : CCMP
+                        Pairwise Ciphers (1) : CCMP
+                        Authentication Suites (1) : PSK
+                    IE: Unknown: DD310050F204104A000110104400010210470010F698DD6DB3B4EB52AEB8DC54CC242CAA103C0001031049000600372A000120
+                    Quality=25/100  Signal level=26/100  
+                    Extra:fm=0001
+
+*/
+
+        if($enabled && $name && $qual!=-1)
+        {
             if(isset($map[$name]))
                 continue;
             $map[$name]=1;
 
-             echo "<tr><td>{$name}</td><td>";
+            echo "<tr><td>{$name}</td><td>";
 
             $perc = substr($qual, strpos($qual,"Quality=")+8);
             $perc = substr($perc, 0, strpos($perc,"/"));
@@ -286,7 +311,6 @@ function scan($iscon, &$ssh, $wlan,$ipaddr)
             echo "<div class='meter-value' style='background-color:#393;width:{$perc}%;'>".
                   "{$perc}%</div>";
             echo "</td><td>{$enc}</td>";
-            
             if($name==$iscon)
             {
                 echo "<td><div class='wifion'>Connected: {$ipaddr}</div></td></tr>";
