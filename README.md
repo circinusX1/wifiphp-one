@@ -9,8 +9,11 @@ One php page to configure wifi client
     - php with https://serverpilot.io/community/articles/how-to-install-the-php-ssh2-extension.html
         -sudo apt-get install libssh2-php 
     - clean slate
-        - sudo apt-get install git lighttpd  php7.0-fpm php7.0  php7.0-fpm php7.0
-    
+        - sudo apt-get install git lphp5-gd php-cgi php-gd php5-gd php-cgi php-gd
+            - sudo lighttpd-enable-mod fastcgi 
+            - sudo lighttpd-enable-mod fastcgi-php
+            - sudo  /etc/init.d/lighttpd force-reloighttpd  
+         
 #### system
 
 ```javascript
