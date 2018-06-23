@@ -12,7 +12,7 @@ One php page to configure wifi client
         - sudo apt-get install git lighttpd php5-gd php5-cgi php5-gd
             - sudo lighttpd-enable-mod fastcgi 
             - sudo lighttpd-enable-mod fastcgi-php
-            - sudo  /etc/init.d/lighttpd force-reloighttpd  
+            - sudo  /etc/init.d/lighttpd force-reload  
          
 #### system
 
